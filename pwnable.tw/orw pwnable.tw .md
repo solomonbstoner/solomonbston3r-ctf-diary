@@ -68,16 +68,17 @@ I ~~have~~ had no idea what is being done by `orw_seccomp`. A very ~~Fun~~ impor
 (1) - ~~Some weird~~ A very important [C function](http://man7.org/linux/man-pages/man2/prctl.2.html),
 Update: I never knew of its purpose until I realised it is an intricate part of [seccomp](https://www.kernel.org/doc/Documentation/prctl/seccomp_filter.txt).
 
-(2) - I noticed `gs:0x14` appeared quite a number of times in different programs, a value in the stack was compared to determine if `__stack_chk_fail@plt` should be called. Turns out the purpose of *is* to validate that the stack has not been corrupted. See [here](https://stackoverflow.com/questions/9249315/what-is-gs-in-assembly).
+(2) - I noticed `gs:0x14` appeared quite a number of times in different programs. A variable in the stack was compared to it to determine if `__stack_chk_fail@plt` should be called. Turns out, the purpose of `mov  eax,DWORD PTR [ebp-0x1c]; xor  eax,DWORD PTR gs:0x14 ` *is indeed* to validate that the stack has not been corrupted. See [here](https://stackoverflow.com/questions/9249315/what-is-gs-in-assembly). `[ebp-0x1c]` is the [*stack canary*](https://en.wikipedia.org/wiki/Stack_buffer_overflow#Stack_canaries) and `gs:0x14` is the [*canary value*](http://en.citizendium.org/wiki/Canary_value).
 
 (3) - The interface `__stack_chk_fail()` shall abort the function that called it with a message that a stack overflow has been detected (by checking if the value of a super secret variable in the stack has been altered). The program that called the function shall then exit.
 
 Update: I initially thought `orw_seccomp` was useless. After finishing this challenge, I realised`syscalls` like `execve` actually could not work, like something was preventing it from working. That *something* had to be `orw_seccomp`, and only then I found out that `orw_seccomp` was part of [**SECure COMPuting with filters**](https://www.kernel.org/doc/Documentation/prctl/seccomp_filter.txt).
 > A certain subset of userland applications benefit by having a reduced set of available system calls.  The resulting set reduces the total kernel surface exposed to the application.  System call filtering is meant for use with those applications.  
 
-`orw_seccomp` is definitely how other syscalls were banned. See [here for a tutorial](https://blog.yadutaf.fr/2014/05/29/introduction-to-seccomp-bpf-linux-syscall-filter/).
+`orw_seccomp` is definitely how other syscalls were banned. See [here for a tutorial](https://blog.yadutaf.fr/2014/05/29/introduction-to-seccomp-bpf-linux-syscall-filter/). 
+Seccomp is an interesting topic, but not the main point of this writeup. You may find out more yourself if you are interested.
 
-This is the `objdump` of `main`, along with my comments on the side.
+Going back to topic, this is the `objdump` of `main`, along with my comments on the side.
 ```
 08048548 <main>:
  8048548:	8d 4c 24 04          	lea    ecx,[esp+0x4]
