@@ -40,7 +40,7 @@ Nope, there was not.
 
 I loaded up the image into GIMP, and applied [alien map filter](https://docs.gimp.org/en/plug-in-alienmap2.html) to the image. I have no idea about the maths and science behind image manipulation, so I'm just trying my luck.
 
-![tavern_night exposed.png](tavern_night exposed.png)
+![tavern_night_exposed.png](tavern_night_exposed.png)
 
 We get our flag `flag{w0ah_5uch_53cr3t_m355ag3}`
 
