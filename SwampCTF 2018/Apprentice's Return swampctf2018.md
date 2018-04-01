@@ -1,4 +1,4 @@
-#For return in swampctf 2018
+# For Apprentice's Return in swampctf 2018
 
 This is how the program worked.
 ```
