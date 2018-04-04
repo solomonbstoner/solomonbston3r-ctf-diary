@@ -6,6 +6,8 @@
 >-=Created By: matg=-
 
 We are given this image
+
+
 ![plans_secret_original](plans_secret_original.png)
 
 It looks like a map, with what seems to be some form of writing in pink and blue letters. It is too difficult to make out what is written. Considering that the flag is a long string, and this looks like a long string, I guessed it might be the flag.
