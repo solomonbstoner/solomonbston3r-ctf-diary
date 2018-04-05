@@ -357,12 +357,13 @@ Had the challenge server still been up, I could have gotten the flag. But at lea
 1. Although it is much easier to rely on `pwntools` to do everything for us, we can always try other tools. For instance, we can use [this website](http://ropshell.com/) to find our ROP gadgets too.
 For example, let's try to find the address of `pop rdi; ret; ` in `libc.so.6`. 
 
-Finding the rop gadget: http://ropshell.com/ropsearch?h=dc6abed98572f9e74390316f9d122aca&p=pop+rdi
 ```
 ropshell> search pop rdi
 found 1 gadgets
 > 0x00021102 : pop rdi; ret
 ```
+Full output : [Click here](http://ropshell.com/ropsearch?h=5d8e5f37ada3fc853363a4f3f631a41a&p=pop+rdi)
+
 The address of the ROP gadget given by both sources are the same.
 | ropshell.com | pwntools |
 | --- | --- |
