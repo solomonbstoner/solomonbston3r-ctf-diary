@@ -33,7 +33,7 @@ This is known as NX and DEP. In this challenge, the function `44de <set_up_prote
 ```
 No matter what our password is, it will always be "incorrect".
 
-The 17th character in our input will override the return address of `<login>`. We can control program flow after `<login>` returns.
+The 17th character in our input will override the return address of `<login>`. We can control program flow after `<login>` returns. The memory dump below shows the memory after giving `aaaaabbbbbcccccdddddeeeeefffffggggghhhhhiiiiijjjjjkkkkklllll` as the input. The input is truncated to 48 characters.
 ```
 3fe0:   7444 0000 0000 0a00 9644 0000 3845 6161   tD.......D..8Eaa
 3ff0:   6161 6162 6262 6262 6363 6363 6364 6464   aaabbbbbcccccddd
@@ -41,6 +41,7 @@ The 17th character in our input will override the return address of `<login>`. W
 4010:   6768 6868 6868 6969 6969 696a 6a6a 0000   ghhhhhiiiiijjj..
 4020:   *
 ```
+After `<login>` returns, the `pc` is loaded with the 17th & 18th characters of the input.
 ```
 pc  6464 
 ```
