@@ -397,4 +397,123 @@ Now, onwards to level5.
 
 ### Level 5
 
-Level 5 has not been pwned yet.
+This level introduces format string vulnerability and exploit. In this level, ignoring the exit, you are given 3 choices.
+Option 1 calls the function `overflow_small`, which gives you a small buffer. Option 2 calls the function `overflow_large`, which gives you a large buffer. Option 3 calls the functions `format_string`, which uses `printf` to echo whatever input you give it.
+```
+----- LEVEL 5 -----
+This is your final task - defeat this level and you will be rewarded.
+Choose your path to victory...
+
+Choice [0 exit][1 small][2 large][3 format]: 
+```
+
+If I choose option 1, I can give input which is written to the stack. It will, however, not be echoed back to us. The stack canary is present, meaning we cannot smash the stack.
+```
+Choice [0 exit][1 small][2 large][3 format]: 1
+Path 1 - Give yourself an extra challenge :)
+a
+aaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaa
+*** stack smashing detected ***: ./level5 terminated
+```
+
+As shown by the assembly in gdb, we are given buffer space for 32 characters only. The function `<overflow_small>` does nothing but consume user input before returning to `<main>`.
+```
+0x00000000004009c1 <+33>:	lea    rdi,[rbp-0x20]
+0x00000000004009c5 <+37>:	mov    edx,0x20
+0x00000000004009ca <+42>:	mov    rcx,QWORD PTR [rip+0x2008bf]        # 0x601290 <stdin@@GLIBC_2.2.5>
+0x00000000004009d1 <+49>:	mov    esi,0x1
+0x00000000004009d6 <+54>:	sub    rdx,rdi
+0x00000000004009d9 <+57>:	add    rdx,rbp
+0x00000000004009dc <+60>:	call   0x400710 <fread@plt>
+```
+
+
+Option 2 is similar to option 1, but with a *much* larger buffer space. Since option 1 has shown that there is stack protection present, there really is no point in choosing option 2 either.
+```
+Choice [0 exit][1 small][2 large][3 format]: 2
+Path 2 - Lots of room to play.
+hhhhhhhhhhhhhhhhhhhhhh
+hhhhhhh
+hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+^C
+```
+
+As shown by the assembly in gdb, we are given buffer space for 1040 characters! Like `<overflow_small>`, the function `<overflow_large>` does nothing but consume user input before returning to `<main>`.
+```
+0x0000000000400a24 <+36>:	lea    rdi,[rbp-0x410]
+0x0000000000400a2b <+43>:	mov    edx,0x330
+0x0000000000400a30 <+48>:	mov    rcx,QWORD PTR [rip+0x200859]        # 0x601290 <stdin@@GLIBC_2.2.5>
+0x0000000000400a37 <+55>:	mov    esi,0x1
+0x0000000000400a3c <+60>:	sub    rdx,rdi
+0x0000000000400a3f <+63>:	add    rdx,rbp
+0x0000000000400a42 <+66>:	call   0x400710 <fread@plt>
+```
+
+This leaves option 3. When I give an input 'w', it echos 'w'. 
+```
+Choice [0 exit][1 small][2 large][3 format]: 3
+Path 3 - The possibilities are endless!
+w
+w
+Still alive?
+```
+To test if it is `printf` that is printing the character, we can insert format strings. And oh boy, it *is*.
+```
+Choice [0 exit][1 small][2 large][3 format]: 3
+Path 3 - The possibilities are endless!
+%d
+39677971
+Still alive?
+```
+
+> The Format String exploit occurs when the submitted data of an input string is evaluated as a command by the application. In this way, the attacker could execute code, read the stack, or cause a segmentation fault in the running application, causing new behaviors that could compromise the security or the stability of the system.
+[source](https://www.owasp.org/index.php/Format_string_attack)
+
+We have identified a vulnerability. It is now time to determine our goal, and how we want to exploit this vulnerability to achieve it. In this level, there is *no* function `goal` to call. Why don't we create a bash shell for ourselves?
+
+Thus far, we know our input is read into and stored in a local variable located in the stack. That means we can potentially hijack the return address. There is a stack canary present in the stack, but as the quote above states, we can always read the stack canary's value. That value will allow us to overwrite the return address. We will explore this in detail later. We also know that the stack is not executable.
+```
+  GNU_STACK      0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000000000 0x0000000000000000  RW     10
+```
+That means we have to use other techniques such as [ret2libc](https://en.wikipedia.org/wiki/Return-to-libc_attack) or [ROP](https://en.wikipedia.org/wiki/Return-oriented_programming). We are given a shared library `libc.so.6`, which is the dependency of level5. That will provide us our libc functions and ROP gadgets.
+
+Now that we have a rough idea of what we want to do, let's explore in gdb *how* we are going to do it. After we select option 3,
+```
+(gdb) disassemble format_string
+Dump of assembler code for function format_string:
+0x0000000000400a60 <+0>:	sub    rsp,0x218
+0x0000000000400a67 <+7>:	mov    edi,0x400be8
+0x0000000000400a6c <+12>:	mov    rax,QWORD PTR fs:0x28
+0x0000000000400a75 <+21>:	mov    QWORD PTR [rsp+0x208],rax	; [rsp+0x208] is the address of the stack canary.
+0x0000000000400a7d <+29>:	xor    eax,eax
+0x0000000000400a7f <+31>:	call   0x400700 <puts@plt>		; "Path 3 - The possibilities are endless!"
+0x0000000000400a84 <+36>:	mov    rdx,QWORD PTR [rip+0x200805]        # 0x601290 <stdin@@GLIBC_2.2.5>
+0x0000000000400a8b <+43>:	mov    esi,0x1ff
+0x0000000000400a90 <+48>:	mov    rdi,rsp
+0x0000000000400a93 <+51>:	call   0x400780 <fgets@plt>		; fgets reads 0x1ff characters from the stdin to the top of the stack.
+0x0000000000400a98 <+56>:	xor    eax,eax
+0x0000000000400a9a <+58>:	mov    rdi,rsp
+0x0000000000400a9d <+61>:	call   0x400740 <printf@plt>		; printf prints the user input from the top of the stack. 
+0x0000000000400aa2 <+66>:	mov    rax,QWORD PTR [rsp+0x208]
+0x0000000000400aaa <+74>:	xor    rax,QWORD PTR fs:0x28
+0x0000000000400ab3 <+83>:	jne    0x400abd <format_string+93>
+0x0000000000400ab5 <+85>:	add    rsp,0x218
+0x0000000000400abc <+92>:	ret    
+0x0000000000400abd <+93>:	call   0x400720 <__stack_chk_fail@plt>
+End of assembler dump.
+```
+
+How do we read the stack canary value using printf?
+
+> Instead of a decimal digit string one may write "*" or "*m$" (for some decimal integer m) to specify that the field width is given in the next argument, or in the m-th argument, respectively, which must be of type int.
+[source](https://linux.die.net/man/3/printf)
+
+To be continued...
