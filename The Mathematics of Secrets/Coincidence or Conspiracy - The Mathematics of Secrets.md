@@ -407,5 +407,134 @@ TypeError: unsupported operand type(s) for *: 'NoneType' and 'int'
 
 Eve knows that L is not the cipher substitution for T. That leaves Q as the only cipher substitution for T.
 
+### The 2 Python scripts
+
+These are the 2 Python scripts used in this writeup.
+
+1. 
+
+```
+# This Python script analyses the letter frequency of the cipher text in Coincidence or Conspiracy of page 31.
+
+def index_of_coincidence():
+	probability_of_coincidence = 0.0
+	for c in cipher_frequency:
+		probability_of_coincidence += (cipher_frequency[c] / total_num_of_chars) * (cipher_frequency[c] - 1) / (total_num_of_chars - 1)
+		print("Index of coincidence for %s : %d/%d * %d/%d" % (c, cipher_frequency[c], total_num_of_chars, cipher_frequency[c] - 1, total_num_of_chars - 1))
+	return probability_of_coincidence
+
+ciphertext = """
+QBVDL WXTEQ GXOKT NGZJQ GKXST RQLYR
+XJYGJ NALRX OTQLS LRKJQ FJYGJ NGXLK
+QLYUZ GJSXQ GXSLQ XNQXL VXKOJ DVJNN
+BTKJZ BKPXU LYUNZ XLQXU JYQGX NTYQG
+XKXQJ KXULK QJNQN LQBYL OLKKX SJYQG
+XNGLU XRSBN XOFUL YDSXU GJNSX DNVTY
+RGXUG JNLEE SXLYU ESLYY XUQGX NSLTD
+GQXKB AVBKX JYYBR XYQNQ GXKXZ LNYBS
+LRPBA VLQXK JLSOB FNGLE EXYXU LSBYD
+XWXKF SJQQS XZGJS XQGXF RLVXQ BMXXK
+OTQKX VLJYX UQBZG JQXZL NG
+"""
+
+ciphertext = ciphertext.replace(" ","").replace("\n","")
+
+cipher_frequency = {}
+
+total_num_of_chars = 0
+
+for c in ciphertext:
+	total_num_of_chars += 1
+	if c in cipher_frequency:
+		cipher_frequency[c] += 1
+	else:
+		cipher_frequency[c] = 1
+
+print ("Total number of characters : %d" % total_num_of_chars)
+
+print ("\nAnalysis of individual letters:")
+print ("-------------------------------")
+
+
+for c in cipher_frequency:
+	percentage_frequency = cipher_frequency[c] / total_num_of_chars * 100.00
+	print("%s :	%d	:	%f%%" % (c, cipher_frequency[c], percentage_frequency ))
+
+print ("-------------------------------")
+
+print ("\nAnalysing Index of coincidence of the cipher :")
+print ("-------------------------------")
+
+print ("Index of coincidence : %f" % index_of_coincidence())
+print ("-------------------------------")
+```
+
+2. 
+
+```
+# This Python script decrypts the cipher text in Coincidence or Conspiracy of page 31 using the keys k and m provided as an argument.
+
+import sys
+
+if(len(sys.argv) != 3):
+	print("k = sys.argv[1], m = sys.argv[2]")
+	exit(1)
+
+# return (g, x, y) a*x + b*y = gcd(x, y)
+def egcd(a, b):
+    if a == 0:
+        return (b, 0, 1)
+    else:
+        g, x, y = egcd(b % a, a)
+        return (g, y - (b // a) * x, x)
+
+# x = mulinv(b) mod n, (x * b) % n == 1
+def mulinv(b, n):
+    g, x, _ = egcd(b, n)
+    if g == 1:
+        return x % n
+
+ciphertext = """
+QBVDL WXTEQ GXOKT NGZJQ GKXST RQLYR
+XJYGJ NALRX OTQLS LRKJQ FJYGJ NGXLK
+QLYUZ GJSXQ GXSLQ XNQXL VXKOJ DVJNN
+BTKJZ BKPXU LYUNZ XLQXU JYQGX NTYQG
+XKXQJ KXULK QJNQN LQBYL OLKKX SJYQG
+XNGLU XRSBN XOFUL YDSXU GJNSX DNVTY
+RGXUG JNLEE SXLYU ESLYY XUQGX NSLTD
+GQXKB AVBKX JYYBR XYQNQ GXKXZ LNYBS
+LRPBA VLQXK JLSOB FNGLE EXYXU LSBYD
+XWXKF SJQQS XZGJS XQGXF RLVXQ BMXXK
+OTQKX VLJYX UQBZG JQXZL NG
+"""
+plaintext = ""
+
+k = int(sys.argv[1])
+m = int(sys.argv[2])
+
+ciphertext = ciphertext.replace(" ","").replace("\n","")
+
+print('Ciphertext: \n' + ciphertext)
+print('\n')
+
+k_inverse = mulinv(k, 26)
+
+for c in ciphertext:
+	print("-----------------")
+	print("Cipher: " + c)
+	c = c.upper()
+	c = ord(c) - ord('A')		# Converts 'A'=0, 'B'=1... 'Z'=25
+	p = k_inverse * ( c - m )
+	p = p % 26
+	print("%d ≡ %d * (%d - %d) (mod 26)" % (p, k_inverse, c, m))
+	p = chr(p + ord('A'))		# Converts 0='A', 1='B'... 25='Z'
+	print("Plaintext: " + p)
+	print("-----------------")
+	plaintext += p
+
+print('Plaintext: \n' + plaintext)
+exit(0)
+```
+
 END
 
