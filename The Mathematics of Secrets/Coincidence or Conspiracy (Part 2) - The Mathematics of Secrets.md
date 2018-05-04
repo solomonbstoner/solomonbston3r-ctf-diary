@@ -81,24 +81,24 @@ Since the vowels are encrypted using homophones just like a Mantuan cipher, we c
 
 We start with 2 equations.
 
-Eqn 1 -> `8 ≡ 19k + m (mod 26)`
-Eqn 2 -> `22 ≡ 13k + m (mod 26)`
+Eqn 1 -> `8 ≡ 19k + m (mod 26)`  
+Eqn 2 -> `22 ≡ 13k + m (mod 26)`  
 Eqn 2 - Eqn 1 -> `-14 ≡ 6k (mod 26)`
 
 Since there is no multiplicative inverse of `6 (mod 26)`, we cannot find the value of `k`, where `k ∈ N`.
 
 2. `T -> I`, `S -> W`
 
-Eqn 1 -> `8 ≡ 19k + m (mod 26)`
-Eqn 2 -> `22 ≡ 18k + m (mod 26)`
+Eqn 1 -> `8 ≡ 19k + m (mod 26)`  
+Eqn 2 -> `22 ≡ 18k + m (mod 26)`  
 Eqn 2 - Eqn 1 -> `-14 ≡ k (mod 26)`
 
 We get the answer `k=12`. The clue tells us that the cipher is *additive*, which means that this value of `k` is incorrect. It should be `k=1` instead. Besides, there is no multiplicative inverse of `12 mod 26`, so `k=12` is a *bad* key. Thus, we can dismiss this possiblity.
 
 3. `T -> I`, `S -> H`
 
-Eqn 1 -> `8 ≡ 19k + m (mod 26)`
-Eqn 2 -> `7 ≡ 18k + m (mod 26)`
+Eqn 1 -> `8 ≡ 19k + m (mod 26)`  
+Eqn 2 -> `7 ≡ 18k + m (mod 26)`  
 Eqn 2 - Eqn 1 -> `1 ≡ k (mod 26)`
 
 Now we know we're on the right track. Let's substitute value `k=1` into eqn 1. 
