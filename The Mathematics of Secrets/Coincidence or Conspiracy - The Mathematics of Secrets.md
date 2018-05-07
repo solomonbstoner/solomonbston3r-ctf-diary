@@ -93,7 +93,7 @@ M :	1	:	0.310559%
 -------------------------------
 ```
 
-Eve notices that there are 2 high-frequency letters, X and Q. This rules out the ciphertext as a homophonic cipher.
+Eve notices that there are 2 high-frequency letters, X and Q. This rules out the ciphertext as a homophonic cipher. As a rule of thumb, if there is a letter that has a frequency percentage of more than 10% in the ciphertext, it is likely not to be a homophonic cipher.
 
 > If homophones were being used, we would expect to see more low-frequency letters and fewer(if any) high frequency ones.
 >  
@@ -150,11 +150,11 @@ Index of coincidence : 0.067820
 -------------------------------
 ```
 
-The index of coincidence of the cipher text is 0.067820. It is very close to the index of coincidence of actual English text, which is 0.066. Hence, Eve concludes that the cipher is an affine cipher.
+The index of coincidence of the cipher text is 0.067820. It is very close to the index of coincidence of actual English text, which is 0.066. Hence, Eve concludes that the cipher is a monographic, monoalphabetic cipher.
 
 ### Solving for the keys k & m.
 
-According to the Phi test (see page 35 of The Mathematics of Secrets), Eve determined that it is highly probable that the ciphertext Eve intercepted is an affine cipher. Since it is monographic, Eve knows the plaintext was encrypted using the following formula: `C ≡ kP + m (mod 26)`.
+Since the cipher is monographic and monoalphebetic, Eve knows the plaintext was encrypted using the following formula: `C ≡ kP + m (mod 26)`.
 
 > The general form of this method for solving a system of several equations in the same number of unknowns is usually known as Cramer's rule
 >  
