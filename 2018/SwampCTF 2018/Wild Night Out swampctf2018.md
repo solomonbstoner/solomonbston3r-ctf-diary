@@ -16,13 +16,15 @@ We are given the following picture.
 Since it involves steganography, I tried 2 *possible* solutions.
 
 1. The flag could be embedded as a string.
+
 ```
 solomonbstoner@swjsUbuntu:~$ strings tavern_night.png | grep -i "flag"
 solomonbstoner@swjsUbuntu:~$
 ```
 Nope, it was not.
 
-2. There might be other png images embedded in the file
+2. There might be other png images embedded in the file.
+
 ```
 solomonbstoner@swjsUbuntu:~$ binwalk tavern_night.png
 
@@ -33,6 +35,7 @@ DECIMAL       HEXADECIMAL     DESCRIPTION
 
 solomonbstoner@swjsUbuntu:~$ 
 ```
+
 Nope, there was not.
 
 
