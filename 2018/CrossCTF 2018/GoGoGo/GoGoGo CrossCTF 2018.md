@@ -24,20 +24,22 @@ Since the binary is stripped, there are a hell lot of functions without names. I
 We know that if the password is wrong, the program prints the string "Good Bye!". It is possible that the very function that evaluates the password prints said string. By finding the address of the string, we can find what function that is. 
 
 We used Binary Ninja to find the string and references to it.
-
+  
 ![xctf_2018_gogogo_str.png](../img/xctf_2018_gogogo_str.png)
 
 Under xrefs, we can see that only 1 function references the string. That is `sub_80c3500`.
-
+  
 ![xctf_2018_gogogo_ref_to_str.png](../img/xctf_2018_gogogo_ref_to_str.png)
 
 That function accepts arguments, and has a big list of its own local variables.
 
 This is its arguments' addresses. 
+  
 ![xctf_2018_gogogo_arg_addr.png](../img/xctf_2018_gogogo_arg_addr.png)
 
 
 This is its local variables' addresses. There are actually more according to Hopper disassembler, but we are only interested in these.
+  
 ![xctf_2018_gogogo_local_var_addr.png](../img/xctf_2018_gogogo_local_var_addr.png)
 
 
@@ -51,7 +53,7 @@ The function does a total of 17 different checks. It compares a byte from the ar
 ##### Check 1
 
 Check 1 checks to make sure that the value of `arg_4 == 0x10`. As this check checks `arg_4` instead of `arg_0`, which is checked by all 16 other checks, I wonder what the relevance of this particular check is. 
-
+  
 ![xctf_2018_gogogo_1st_check.png](../img/xctf_2018_gogogo_1st_check.png)
 
 
@@ -60,7 +62,7 @@ Check 1 checks to make sure that the value of `arg_4 == 0x10`. As this check che
 Check 2 checks that `[arg_0 +1] ^ 0x3 == var_B8`, where `var_B8 = 0xae`.
 
 This means that `[arg_0 +1] = 0xad`. It is the 2nd character of the password string.
-
+  
 ![xctf_2018_gogogo_2nd_check.png](../img/xctf_2018_gogogo_2nd_check.png)
 
 
@@ -70,7 +72,7 @@ This means that `[arg_0 +1] = 0xad`. It is the 2nd character of the password str
 Check 3 checks that `[arg_0] & 0xfffffffe == var_B7`, where `var_B7 = 0x10`.
 
 This means that `[arg_0] = 0x10`. It is the 1st character of the password string. It could also be 0x11, but we stuck with 0x10. It's a matter of choice, really.
-
+  
 ![xctf_2018_gogogo_3rd_check.png](../img/xctf_2018_gogogo_3rd_check.png)
 
 
@@ -79,7 +81,7 @@ This means that `[arg_0] = 0x10`. It is the 1st character of the password string
 Check 4 checks that `[arg_0 +3] | 0x3 == var_B6`, where `var_B6 = 0x1b`.
 
 This means that `[arg_0 +3] = 0x1b`. It is the 3rd character of the password string.
-
+  
 ![xctf_2018_gogogo_4th_check.png](../img/xctf_2018_gogogo_4th_check.png)
 
 ###### Check 5
@@ -89,7 +91,7 @@ Check 5 checks that `[arg_0 +2] ^ 0xffffffde == 0xae`.
 
 This means that `[arg_0 +2] = 0x70`. It is the 3rd character of the password string.
 
-
+  
 ![xctf_2018_gogogo_5th_check.png](../img/xctf_2018_gogogo_5th_check.png)
 
 ###### Check 6

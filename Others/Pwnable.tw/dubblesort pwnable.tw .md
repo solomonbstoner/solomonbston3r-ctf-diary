@@ -23,20 +23,25 @@ This means that if our exploit involves smashing the stack, we must somehow get 
 Now that we know what it does, let's see *how* it does it. 
 
 First, this is the part of the assembly that reads and prints the user's name. The variable name, `my_name`, is arbitrarily given so its easy to keep track of the variable.
+  
 ![Dubblesort reads the user's name and prints it out using printf](img/pwnabletw_dubblesort_read_name.png)
 
 When I tried out the program, I noticed that there were a couple of times where some other symbols apart from the name gets printed out too. Those are garbage values. It tells us that the variable `my_name` was not initialized before usage. Perhaps there might be some useful leftover values from previous functions that we could use. I'm just guessing. (Actually, there actually is a key value inside that we need to use. I'll explain it later.)
+  
 ![Printf prints out other values other than the name](img/pwnabletw_doublesort_uninitialized_variable.png)
 
 Next, the program asks for the number of numbers we want to sort. The assembly below shows how it does it. Take note that the program does not sanitise input at all. It does not restrict the size of the number we give it. The variable `int_array_ptr` is essentially a pointer variable for an array of integers. 
+  
 ![Dubblesort reads the user input using scanf('%u', var_name)](img/pwnabletw_dubblesort_num_of_nums_to_sort.png)
 
 
 Then, the program asks for the value of each number we want to sort. With the lack of input sanitation identified above, we can essentially write into any memory address on the stack that comes after `int_array_ptr`. This are things like the stack canary and return address from `<main>`. Afterwards, a sorting function is called to sort the values, so although we can write into memory we are not supposed to, the values could be all jumbled up if we do not choose them correctly.
+  
 ![Dubblesort reads the numbers using scanf('%u', var_name)](img/pwnabletw_dubblesort_reading_nums_to_sort.png)
 
 
 After the sorting, the result is printed out. I arbitrarily named the sorting function `processing`. The screenshot belows shows an overview of the input, sorting and printing of numbers.
+  
 ![Overview of how the numbers are entered and sorted, then printed out.](img/pwnabletw_dubblesort_remainding_part_of_main.png)
 
 
