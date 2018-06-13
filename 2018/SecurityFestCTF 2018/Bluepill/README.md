@@ -121,7 +121,7 @@ cmp rax, 0xB
 ```
 
 
-For instance, if we run a string `"Hello"` through the instructions, `repne scasb` returns `0xFFFFFFFFFFFFFFF9`. After negating the returned value, and decrementing it once, we are left with the value `0x5` (which is the length of the string `"Hello"`).
+For instance, if we run a string `"Hello"` through the instructions, `repne scasb` returns `0xFFFFFFFFFFFFFFF9`. Who can possibly infer the length of the string from this value? After negating the returned value, and decrementing it once, we are left with the value `0x5` (which is the length of the string `"Hello"`).
 
 ##### Third Check overview
 
@@ -138,7 +138,7 @@ We broke down the Third check into 4 parts to understand what they do individual
 
 Before we analyse what this part of the Third check does, keep in mind that all the parts are interconnected. Some instructions may not make sense here, but you will see its relevance in the subsequent parts. 
 
-With that out of the way, let's begin our analysis. First, part 1 stores the address of the 13th character of `user_string` in register `r14`, and a hash string's address in `r13`. To the untrained eye, it looks like a regular, weird string. However, its characters are all hex values, and it is 32 bytes long. It has uncanny resemblence to a hash string. It is not important for now. We'll come back to it later.
+With that out of the way, let's begin our analysis. First, part 1 stores the address of the 13th character of `user_string` in register `r14`, and a hash string's address in `r13`. To the untrained eye, it looks like a regular, weird string. However, its characters are all hex values, and it is 16 bytes long. It has uncanny resemblence to a hash string. It is not important for now. We'll come back to it later.
 
 Moving on, we see that arguments are being prepared for the `<calc>` function, and there is a weird instruction called `rep stosb`. We were stuck for a moment. We did not know what `rep stosb` does, so we spent some time to research on it.
 
@@ -165,7 +165,7 @@ At first we did not know what the 2nd and 3rd arguments are for. Neither were we
 
 ![Immediate values from <calc>](img/sctf2018_bluepill_immediate_values_from_calc.png)
 
-We wondered for a momeny why the function chose these specific values to move immediate into the registers. It would make sense if it moved 0x0, or say 0x1. Those are common. But to move a large immediate hex value of a specific value seemed more liekly intentional than coincidence. So we googled those values to see what purpose they serve. Turns out, they were values for md5 hashing. Remember the 32 bytes long hash string from part 1? It makes sense now. The kernel module would md5 hash user input, then compare it to an existing md5 hash. 
+We wondered for a momeny why the function chose these specific values to move immediate into the registers. It would make sense if it moved 0x0, or say 0x1. Those are common. But to move a large immediate hex value of a specific value seemed more liekly intentional than coincidence. So we googled those values to see what purpose they serve. Turns out, they were values for md5 hashing. Remember the 16 bytes long hash string from part 1? It makes sense now. The kernel module would md5 hash user input, then compare it to an existing md5 hash. 
 
 
 ![Verification that <calc> does md5 hashing](img/sctf2018_bluepill_confirmation_of_MD5.png)
@@ -176,7 +176,7 @@ We also later found out in part 3 that the 2nd argument was the number of charac
 
 ![Third Check part 2](img/sctf2018_bluepill_third_check_part_2.png)
 
-After hashing 4 characters, part 2 hashes each byte of `calculated_str` with each byte of `proc_ver_string` before storing the result in the string back in `calculated_str`. `rbp` is used as the index for both strings. It was initialised to 0x0 in part 1. With each iteration, `rbp` is incremented to cycle through each byte of the strings until the 32rd character, inclusive. That effectively `xor` encrypts the md5 hash of the user input. That concludes part 2.
+After hashing 4 characters, part 2 `XOR` encrypts each byte of `calculated_str` with each byte of `proc_ver_string` before storing the result in the string back in `calculated_str`. `rbp` is used as the index for both strings. It was initialised to 0x0 in part 1. With each iteration, `rbp` is incremented to cycle through each byte of the strings until the 16th byte, inclusive. That effectively `xor` encrypts the md5 hash of the user input. That concludes part 2.
 
 
 ##### Third Check part 3
@@ -205,8 +205,52 @@ In other words, the `XOR` encrypted md5 hash of the first 4 characters of `user_
 Now, let us explain to you why there are only 3 iterations. Remember from Part 1 of the Third Check that `lea r14, [rbx+0xC]` loaded the address of the 13th character of `user_string` into `r14`. Essentially, it means `r14 = &(user_string[12]`. In part 4, `cmp rbx, r14` merely checks to see if `rbx` points to `user_string[12]`. If it is (and assuming we passed the 3 `<memcmp>` verifications in Part 3), the Third Check is terminated and we successfully reached `init_task`. As discussed before, it gives us escalated privileges to read the flag.
 
 
-### Crafting the exploit
+### Preparing to extract the password
+
+We found out that part 1 of the Third Check md5 hashes the user string 4 characters at a time, then Part 2 of the Third Check `XOR` encrypts the md5 hash using `/proc/version` as the key before comparing it to the 3 hashes in its memory. To reconstruct the password, we simply decrypt the md5 hash first, then check which website can help us dehash the decrypted md5 hashes.
+
+We made a Python script to decrypt the md5 hashes for us. It is the file `solution_to_Bluepill.py`.
+
+After running the file, we got the following output. Ignore the `XOR` equations. Those were included for debugging our script. The bottom 3 lines are what we want.
+```
+[...]
+0x21 ^ 0x75 = 54
+0x4f ^ 0x78 = 37
+0x4a ^ 0x20 = 6a
+0x91 ^ 0x76 = e7
+0x31 ^ 0x65 = 54
+0xeb ^ 0x72 = 99
+0xc6 ^ 0x73 = b5
+0x7e ^ 0x69 = 17
+0x6c ^ 0x6f = 03
+0x7a ^ 0x6e = 14
+0x86 ^ 0x20 = a6
+0xd1 ^ 0x34 = e5
+0x62 ^ 0x2e = 4c
+XOR decrypted hash for user_string[0:4] : 0c5ff0f900941747d69b7a4de4c8da40
+XOR decrypted hash for user_string[4:8] : a8ce348b696e32e6d619c34f906e5a83
+XOR decrypted hash for user_string[8:12] : c05e2754376ae75499b5170314a6e54c
+```
 
 
-To be continued...
+### Successfully extracting the password
 
+Armed with the md5 hashes, we headed to [this website](https://www.md5online.org/) to check against their database to see if there is plaintext password characters corresponding to those hashes.
+
+The screenshots below show us the plaintext characters that produce said md5 hashes.
+
+![user_string[0:4]](img/sctf2018_bluepill_first_hash.png)
+![user_string[4:8]](img/sctf2018_bluepill_second_hash.png)
+![user_string[8:12]](img/sctf2018_bluepill_third_hash.png)
+
+With this information, we concluded that the input to the file `/proc/bluepill` should be `"g1Mm3Th3r3D1"` for us to read the flag. We tested it on the local QEMU emulator. It worked.
+
+```
+/home/ctf $ echo "g1Mm3Th3r3D1" > /proc/bluepill
+[BLUEPILL] You made the right choice! Now see the world for what it really is ..................... !
+sh: write error: Bad address
+/home/ctf # whoami
+sh: whoami: not found
+/home/ctf # cat flag
+sctf{real_flag_is_on_the_remote_server_:)))}
+```
