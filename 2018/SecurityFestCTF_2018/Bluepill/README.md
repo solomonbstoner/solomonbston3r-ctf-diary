@@ -18,10 +18,10 @@ $ cat run.sh
 qemu-system-x86_64 -kernel ./tiny.kernel -initrd ./init -m 32 -nographic -append "console=ttyS0"
 ```
 
-`run.sh` emulates a small Linux kernel named `tiny.kernel` using QEMU. When we ran `run.sh`, we were presented with a welcome screen all about "bluepill". It is likely related to `bluepill.ko`, the kernel module object file we were given.
+`run.sh` emulates a small Linux kernel named `tiny.kernel` using QEMU. When we ran `run.sh`, `qemu` printed "\[Bluepill Loaded\]". It is likely related to `bluepill.ko`, the kernel module object file we were given.
 
 
-![Welcome screen after running run.sh](./img/sctf2018_bluepill_welcome_screen.png)
+![Output after running run.sh](./img/sctf2018_bluepill_welcome_screen.png)
 
 
 In the home directory, we were given the flag file and another file called `banner`.
@@ -32,8 +32,29 @@ total 8
 -r--------    1 0        root            45 May 26 22:51 flag
 ```
 
-Even though the permissions state that `banner` is executable, it is not. `cat banner` printed out the welcome screen featuring the half-blue-half-red pill we saw earlier. Our goal is to `cat flag`, which we could not because we do not have permissions to do so. 
+Even though the permissions state that `banner` is executable, when we tried to, it gave a bunch of nonsensical output.
+```
+/home/ctf $ ./banner 
+./banner: line 1: : not found
+./banner: line 1: 5: not found
+./banner: line 1: 124m: not found
+./banner: line 1: 5: not found
+./banner: line 1: 196m: not found
+./banner: line 2: : not found
+./banner: line 2: 5: not found
+./banner: line 2: 196m▄[48: not found
+./banner: line 2: 5: not found
+./banner: line 2: 196m[38: not found
+./banner: line 2: 5: not found
+./banner: line 2: 231m▄[48: not found
+./banner: line 2: 5: not found
+./banner: line 2: 224m[38: not found
+./banner: line 2: 5: not found
+[...]
+```
+The emulated kernel does not have the commands  `file` or `hexdump`, so we could not analyse why. However, running `cat banner` printed the same output featuring the half-blue-half-red pill we saw after running `./run.sh`. This meant that `banner` was most probably just a text file without valid shell commands that was executed as a shell script. `banner` could not have been more useless.
 
+Our goal is to `cat flag`, which we could not because we do not have permissions to do so. 
 ```
 /home/ctf $ cat flag
 cat: can't open 'flag': Permission denied
@@ -207,7 +228,7 @@ Now, let us explain to you why there are only 3 iterations. Remember from Part 1
 
 ### Preparing to extract the password
 
-We found out that part 1 of the Third Check md5 hashes the user string 4 characters at a time, then Part 2 of the Third Check `XOR` encrypts the md5 hash using `/proc/version` as the key before comparing it to the 3 hashes in its memory. To reconstruct the password, we simply decrypt the md5 hash first, then check which website can help us dehash the decrypted md5 hashes.
+We found out that part 1 of the Third Check md5 hashes the user string 4 characters at a time, then Part 2 of the Third Check `XOR` encrypts the md5 hash using `/proc/version` as the key before comparing it to the 3 hashes in its memory. To reconstruct the password, we simply decrypt the md5 hash first, then check which website can help us do a reverse hash lookup on the decrypted md5 hashes.
 
 We made a Python script to decrypt the md5 hashes for us. It is the file `solution_to_Bluepill.py`.
 
