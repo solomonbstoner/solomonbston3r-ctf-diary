@@ -19,41 +19,21 @@ We then ran a simple scan of the network using a mobile app called `Fing` to fin
 
 Turns out it was `192.168.51.5` and `192.168.51.6`. Thus, we searched for packets in our pcap file involving these 2 addresses. It gave us the flag `HI{M0RER3CON932}`.
 
-![](../../img/iot_ctf2018_recon_basics_sniff_pcap_output)
+![](../../img/iot_ctf2018_recon_basics_sniff_pcap_output.png)
 
 
-Since the flag was given in plaintext, it is possible to get it simply using `strings` too. The other flag is for another challenge.
+Since the flag was given in plaintext, it is possible to get it simply using `strings` too. The other flag, `HI{I0T_Mu1t1c45t!!!!1!!1!!!}`, is for another challenge.
 ```
 ➜  iotctf2018 strings spam_sniffing.pcapng | grep "HI{"
 :HI{I0T_Mu1t1c45t!!!!1!!1!!!}
 :HI{I0T_Mu1t1c45t!!!!1!!1!!!}
+[...]
+SERVER: Arduino/1.0 UPNP/1.1 GEN_ONE/HI{M0RER3CON932}
 :HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
+[...]
 :HI{I0T_Mu1t1c45t!!!!1!!1!!!}
 :HI{I0T_Mu1t1c45t!!!!1!!1!!!}
 SERVER: Arduino/1.0 UPNP/1.1 GEN_ONE/HI{M0RER3CON932}
 :HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-SERVER: Arduino/1.0 UPNP/1.1 GEN_ONE/HI{M0RER3CON932}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
-:HI{I0T_Mu1t1c45t!!!!1!!1!!!}
+[...]
 ```
