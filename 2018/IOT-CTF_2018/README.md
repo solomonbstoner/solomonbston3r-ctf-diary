@@ -13,8 +13,13 @@ The proud members of this group are
 2. Wong Chi Seng
 3. Solomon Tan
 
-.
 
-This is the list of completed writeups for your viewing pleasure, please.
+This is the list of completed writeups for your viewing pleasure, please. :)
 
-
+| Category | Challenge | Number of solves |
+| --- | --- | --- |
+| ArguablySmartLights | Recon Basics | 11 |
+| Armv71 | warmup | 4 |
+| Devices | Serially Fun! | 2 |
+| Devices | TV - Serial Number | 8 |
+| Special | Home Invasion Wifi Password | 17 |
