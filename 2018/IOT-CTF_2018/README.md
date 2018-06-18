@@ -18,7 +18,7 @@ This is the list of completed writeups for your viewing pleasure, please. :)
 
 | Category | Challenge | Number of solves |
 | --- | --- | --- |
-| ArguablySmartLights | Recon Basics | 11 |
+| ArguablySmartLights | Recon Basics Sniff | 11 |
 | Armv71 | warmup | 4 |
 | Devices | Serially Fun! | 2 |
 | Devices | TV - Serial Number | 8 |
