@@ -35,7 +35,7 @@ $ airodump-ng wlp1s0mon0
 
 After sniffing the Beacon frames, and identifying our target wifi's BSSID, we proceeded to capture `Home Invasion`'s 4-way handshake.
 The command for the capture was `airodump-ng -c 3 --bssid 34:97:F6:01:93:48 -w ./capture.cap wlp1s0mon0`
-![](../img/iot_ctf2018_wifi_passwd_handshake.png)
+![](../../img/iot_ctf2018_wifi_passwd_handshake.png)
 
 ### Preparing the wordlist
 
@@ -79,7 +79,7 @@ aircrack-ng -a2 -b 34:97:F6:01:93:48 -w word_list capture.cap
 ```
 
 The image below shows that the command successfully returned us the password for the wifi.
-![](../img/iot_ctf2018_home_cracking_passwd.png)
+![](../../img/iot_ctf2018_wifi_passwd_cracking_passwd.png)
 
 
 In conclusion, the flag input is `HI{96859685}`.
