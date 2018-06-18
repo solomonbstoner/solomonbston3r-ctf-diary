@@ -52,6 +52,6 @@ Thus, we decreased the length of our input gradually from 25 to 24.... to 15. Th
 
 We did not know what to do with those values, but there was no harm trying to see if it was the password. We keyed in the characters appened to the end of our user supplied string, and voila, We got a flag! It is `HI{M0R3_H45T3_LE55_5P33D}`
 
-![](iot_ctf2018_serially_fun_flag.jpg)
+![](../../img/iot_ctf2018_serially_fun_flag.jpg)
 
 DSO's clue was to solve this challenge was to extract the firmware from the device using ST-Link. However, it was unnecessary. It might be though, now that we want to extract the 2nd flag from the device.
