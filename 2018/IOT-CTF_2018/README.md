@@ -18,6 +18,9 @@ This is the list of completed writeups for your viewing pleasure, please. :)
 
 | Category | Challenge | Number of solves |
 | --- | --- | --- |
+| ArguablySmartLights | Recon Basics Web | 9 |
+| ArguablySmartLights | Firmware Reverse Easy | 9 |
+| ArguablySmartLights | Decrypt Everyone! | 2 |
 | ArguablySmartLights | Recon Basics Sniff | 11 |
 | Armv71 | warmup | 4 |
 | Devices | Serially Fun! | 2 |
