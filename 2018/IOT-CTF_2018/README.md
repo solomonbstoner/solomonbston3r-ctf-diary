@@ -23,6 +23,7 @@ This is the list of completed writeups for your viewing pleasure, please. :)
 | ArguablySmartLights | Firmware Reverse Easy | 9 |
 | ArguablySmartLights | Recon Basics Sniff | 11 |
 | ArguablySmartLights | Recon Basics Web | 9 |
+| Armv71 | shellcode | 3 |
 | Armv71 | warmup | 4 |
 | Devices | Serially Fun! | 2 |
 | Devices | TV - Serial Number | 8 |
