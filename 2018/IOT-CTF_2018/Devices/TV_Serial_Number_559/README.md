@@ -16,7 +16,11 @@ We then used `Nmap` to scan the TV for open ports. One particular port, `port 19
 
 ![](../../img/iot_ctf2018_tv_serial_number_port_scan.png)
 
-`curl 192.168.51.36:1925` returned us a HTML response, so we opened it in a browser. It was a webpage of API documentation to communicate with the TV. Unsurprisingly, there was also a API method to get the TV's serial number.
+`curl 192.168.51.36:1925` returned us a HTML response, so we opened it in a browser. It was a webpage of API documentation to communicate with the TV. 
+
+![](../../img/iot_ctf2018_tv_serial_number_api_website.png)
+
+Unsurprisingly, there was also a API method to get the TV's serial number.
 
 ![](../../img/iot_ctf2018_tv_serial_number_API_serialnumber.png)
 

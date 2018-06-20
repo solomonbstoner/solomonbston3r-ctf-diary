@@ -2,13 +2,20 @@
 
 > You need access into the Home Invasion network before you can solve this challenge. There is only one flag in this challenge. Hint: Access our TV and Change the TV source.
 
-This challenge is a sequel of the challenge TV - Serial Number - 559. Remember from that challenge that we managed to find a website documenting all the API HTTP requests used to communicate with the TV. To access it, we opened a browser with the URL: `192.168.51.36:1925`.
+This challenge is a sequel of the challenge TV - Serial Number - 559. Remember from that challenge that we managed to find a website documenting all the API HTTP requests used to communicate with the TV. To access it, we opened a browser with the URL: `192.168.51.36:1925`. It was a website containing documentation for a list of APIs. While in TV - Serial Number, we were interested in the API, `GET system/serialnumber`, this time we were interested in a different pair of API functions.
+
+
+![](../../img/iot_ctf2018_tv_find_the_right_qr_code_api_website.png)
 
 In the documentation, there were 2 more requests of interest:
-1. GET request to show all sources of the TV
-2. POST request to change the current source of the TV
+1. GET request to show all sources of the TV (The documentation is available [here](http://jointspace.sourceforge.net/projectdata/documentation/jasonApi/1/doc/API-Method-sources-GET.html) too)
 
-Unfortunately we forgot to take a screenshot of the API documentation, so we are unable to show you. We have contacted the organisers. Hopefully they may have a copy for us to include in this writeup! :) 
+![](../../img/iot_ctf2018_tv_find_the_right_qr_code_get_sources_api.png)
+
+2. POST request to change the current source of the TV (The documentation is available [here](http://jointspace.sourceforge.net/projectdata/documentation/jasonApi/1/doc/API-Method-sources-current-POST.html) too)
+
+![](../../img/iot_ctf2018_tv_find_the_right_qr_code_set_current_source_api.png)
+ 
 
 First, we ran the GET request to get a JSON representation of all the sources of the TV.
 
