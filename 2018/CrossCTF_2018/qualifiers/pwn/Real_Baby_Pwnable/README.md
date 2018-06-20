@@ -25,12 +25,12 @@ There are 3 functions in this program.
 
 
 The function `babymode` does nothing more than call `system('/bin/sh')`. This is exactly the function we want to call.
-![xctf_2018_realbabypwn_target.png](../img/xctf_2018_realbabypwn_target.png)
+![xctf_2018_realbabypwn_target.png](xctf_2018_realbabypwn_target.png)
 
 
 We also know that `main` just calls the `fibonacci`. `fibonacci` does all the heavy lifting here, so we know the vulnerability must be inside it. The picture below is the vulnerable portion of the function. 
 
-![xctf_2018_realbabypwn_exploitable.png](../img/xctf_2018_realbabypwn_exploitable.png)
+![xctf_2018_realbabypwn_exploitable.png](xctf_2018_realbabypwn_exploitable.png)
 
 Instead of calculating the value of the fibonacci manually each time the user enters a value, the program extracts it from an array. `fibonacci_array` is the array itself. `user_number` is the number the user inputs to choose which fibonacci number to be displayed. The assembly shows that the number that gets printed by `printf` is `fibonacci_array[user_number]`.
 ```
@@ -43,7 +43,7 @@ There is no input sanitation, so we can input any value we want into `user_numbe
 
 The program is protected from stack smashing by a stack canary. If we want to redirect program execution to `babymode`, we have to override a return address somehow. That means we need to know the stack canary's value so the program doesn't detect the stack smashing. How, then, do we print the stack canary's value?
 
-![xctf_2018_realbabypwn_local_vars.png](../img/xctf_2018_realbabypwn_local_vars.png)
+![xctf_2018_realbabypwn_local_vars.png](xctf_2018_realbabypwn_local_vars.png)
 
 > EDIT: I realised that the variable at `rbp-0x908` should be the 2nd element of `fibonacci_array` (ie `fibonacci_array[1]`).
 
