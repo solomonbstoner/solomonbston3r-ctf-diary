@@ -26,7 +26,7 @@ checksec skippingrope
 
 Now let's take a look at the assembly of the program. `<main>` only calls `<skipping_rope>`. That is our function of interest.
 
-![xctf_2018_skipping_rope_function_of_interest.png](../img/xctf_2018_skipping_rope_function_of_interest.png)
+![xctf_2018_skipping_rope_function_of_interest.png](xctf_2018_skipping_rope_function_of_interest.png)
 
 
 The function calls `mmap(0, 0x2000, 7, 0x22, 0xffffffff, 0)`. The argument `7` is a binary OR of `PROT_EXEC | PROT_READ | PROT_WRITE`, meaning the mapped memory is readable, writable and executable.
@@ -47,12 +47,12 @@ Mapped address spaces:
 
 The screenshot below shows that the function reads user input into the first 6 bytes of every 16 bytes of the mapped memory. A total of 1536 bytes are read. 
 
-![xctf_2018_skipping_rope_reading_into_memory.png](../img/xctf_2018_skipping_rope_reading_into_memory.png)
+![xctf_2018_skipping_rope_reading_into_memory.png](xctf_2018_skipping_rope_reading_into_memory.png)
 
 
 After reading user input, the function executes user input starting at the beginning of the mapped memory space.
 
-![xctf_2018_skipping_rope_after_reading.png](../img/xctf_2018_skipping_rope_after_reading.png)
+![xctf_2018_skipping_rope_after_reading.png](xctf_2018_skipping_rope_after_reading.png)
 
 Given an input `"AAAAA....AAAA"`, this is how the mapped memory looks like.
 ```
