@@ -19,6 +19,7 @@ This is the list of completed writeups for your viewing pleasure, please. :)
 | Category | Challenge | Number of solves |
 | --- | --- | --- |
 | ArguablySmartLights | Decrypt Everyone! | 2 |
+| ArguablySmartLights | Easter Egg 1 | 7 |
 | ArguablySmartLights | Firmware Reverse Easy | 9 |
 | ArguablySmartLights | Recon Basics Sniff | 11 |
 | ArguablySmartLights | Recon Basics Web | 9 |
