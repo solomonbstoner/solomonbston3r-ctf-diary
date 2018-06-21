@@ -21,7 +21,7 @@ app.listen(31337)
 ```
 The key here was to know how == and type coersion works.
 
-![xctf_2018_quirkyscript_1.png](../img/xctf_2018_quirkyscript_1.png)
+![xctf_2018_quirkyscript_1.png](xctf_2018_quirkyscript_1.png)
 
 Then we have to give our input as an array. 
 

