@@ -46,7 +46,11 @@ We recalled from a previous challenge called [Dubblesort in Pwnable.tw](https://
 
 Thus, we decreased the length of our input gradually from 25 to 24.... to 15. The canary kept dying.  But once we reached length 15, something magical happened. Some additional characters were printed out, exactly like Dubblesort in Pwnable.tw. However, each time we restarted the board, the values were different. We have attached pictures from 2 separate runs to let you see what the values looks like in each run. Our input in both cases were `"aaaaabbbbbccccc"`. This magic happens only when input length is 15 characters long. 
 
+This was the first run:
+
 ![](../../img/iot_ctf2018_serially_fun_1st_leak.jpg) 
+
+This was the second run:
 
 ![](../../img/iot_ctf2018_serially_fun_2nd_leak.jpg)
 
@@ -59,6 +63,7 @@ But, there was no harm trying to see if it was the password. We keyed in the ext
 
 ![](../../img/iot_ctf2018_serially_fun_flag.jpg)
 
+Note: Not all the extra characters are part of the password. For instance, if the extra characters are `"[Wx89x@po"`, the password could actually be `"Wx89x@po"` (ie without the `"["`) or even `"x89x@po"` (ie without the `"[W"`). Sometimes they are all the extra characters, sometimes they are not. We are not sure why either. You just have to try a few times until the input is accepted. Also, sometimes the characters printed are hard to read, like in the screenshot from the first run above. In that case, we simply resetted the board and tried again until all the extra characters were legible.
 
 ### Second challenge (Not part of IoT-CTF)
 
