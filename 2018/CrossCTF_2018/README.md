@@ -8,7 +8,7 @@
 
 ## Qualifiers
 
-### Writeup Links
+### Other Writeups
 
 * https://github.com/nush-osi-layer-8/writeups/blob/master/crossctf-quals2018/
 * https://tcode2k16.github.io/blog/posts/crossctf-2018-writeup/
