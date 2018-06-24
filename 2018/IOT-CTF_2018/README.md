@@ -23,9 +23,13 @@ This is the list of completed writeups for your viewing pleasure, please. :)
 | ArguablySmartLights | Firmware Reverse Easy | 9 |
 | ArguablySmartLights | Recon Basics Sniff | 11 |
 | ArguablySmartLights | Recon Basics Web | 9 |
+| ArguablySmartLights | Stealing Unattended Certificates | 6 |
 | Armv71 | shellcode | 3 |
 | Armv71 | warmup | 4 |
+| Crypto | RSA1 | 8 |
+| Crypto | RSA2 | 7 |
 | Devices | Serially Fun! | 2 |
 | Devices | TV - Serial Number | 8 |
 | Misc | TV - Find the right QR code | 8 |
+| Network | Whats inside the network? | 9 |
 | Special | Home Invasion Wifi Password | 17 |

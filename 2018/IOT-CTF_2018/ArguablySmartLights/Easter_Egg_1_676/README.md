@@ -1,10 +1,14 @@
 # Easter Egg 1 - 676
 
+## Challenge
+
 > You need access into the Home Invasion network before you can solve this challenge. There is only one flag in this challenge
 >  
 > This is an easter egg in this one.
 >  
 > If you have tried for at least 30 mins and still dunno what this is about, consult facilitators.
+
+## Solution
 
 The easter egg is in the flashing LED strip of the smart lights device. It flashes in the format of the gif image below.
 
@@ -20,7 +24,8 @@ We used a phone to record down a video of the flashing lights for analysis. It t
 
 We were told "Don't overthink it". Perhaps, each lit light represented a 1, and each unlit light represented a 0. 
 
-We watched the video a few times and recorded the number of lit and dark lights in a file we arbitrarily named `./easter_egg`. This is a small excerpt from the file.
+We watched the video a few times and recorded the number of lit and dark lights in [easter_egg](easter_egg). This is a small excerpt from [easter_egg](easter_egg):
+
 ```
 [...]
 3D
@@ -34,52 +39,16 @@ We watched the video a few times and recorded the number of lit and dark lights 
 [...]
 ```
 
-Let us explain what it means. `3D` means 3 '0's. `2L` means 2 '1's. With that intepretation, the excerpt above represents `0001101001011`. 
+Let us explain what it means. `3D` means 3 '0's (off bits) and `2L` means 2 '1's (on bits). With that intepretation, the excerpt above represents `0001101001011`. 
 
-We were lazy to analyze the file manually, so we wrote a Python script we arbitrarily named `./solver.py` to interpret it for us as described above.
+We were lazy to analyze the file manually, so we wrote [solver.py](solver.py) to interpret it for us as described above.
 
-```
-import binascii
-
-FILENAME = 'easter_egg'
-
-light = True
-with open(FILENAME) as f:
-    bits = ''
-    for line in f:
-        if len(line.rstrip()) > 2:
-            continue
-        if line[1] == 'L':
-            if light:
-                light = False
-            else:
-                print('[DEBUG] error!')
-            for i in range(int(line[0])):
-                bits += '1'
-        else:
-            if not light:
-                light = True
-            else:
-                print('[DEBUG] error!')
-            for i in range(int(line[0])):
-                bits += '0'
-
-### Truncate
-
-bits = bits[0:len(bits)//8*8] # round down to multiple of 8
-
-### Convert bit string to ascii
-
-n = int('0b' + bits, 2)
-msg = binascii.unhexlify('%x' % n)
-
-print('>> msg is:\n%s' % msg)
-```
-
-Both files `./easter_egg` and `./solver.py` are available in this writeup. After running the python script, we got the flag, `HI{Y0uActu4llyNotic32}`. (We had to add the `}` at the end.)
+Running [solver.py](solver.py) with [easter_egg](easter_egg),
 
 ```
 python2 solver.py
 >> msg is:
 �S��X�_HI{Y0uActu4llyNotic32��
 ```
+
+We obtained a jumble of characters (some unprintable) with clues of a flag in between: `HI{Y0uActu4llyNotic32`. Knowing that we are close the solution, we submitted different combinations of the flag until `HI{Y0uActu4llyNotic3d!}` was accepted.

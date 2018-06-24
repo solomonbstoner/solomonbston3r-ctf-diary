@@ -67,4 +67,4 @@ Note: Not all the extra characters are part of the password. For instance, if th
 
 ### Second challenge (Not part of IoT-CTF)
 
-After we solved the challenge above, DSO informed us that there is a *second* flag included. They hinted that it could be found by extracting the firmware from the device using ST-Link. We are currently attempting this challenge, and will post updates here.
+After we solved the challenge above, DSO informed us that there is a *second* flag included. They hinted that it could be found by extracting the firmware from the device using ST-Link. We solved the challenge. However, DSO requested that we keep the writeup private. 
