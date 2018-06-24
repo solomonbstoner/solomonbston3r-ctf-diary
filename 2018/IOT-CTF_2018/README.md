@@ -31,4 +31,5 @@ This is the list of completed writeups for your viewing pleasure, please. :)
 | Devices | Serially Fun! | 2 |
 | Devices | TV - Serial Number | 8 |
 | Misc | TV - Find the right QR code | 8 |
+| Network | Whats inside the network? | 9 |
 | Special | Home Invasion Wifi Password | 17 |
