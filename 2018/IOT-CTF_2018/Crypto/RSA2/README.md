@@ -1,4 +1,4 @@
-# RSA2 (919 points)
+# RSA2 - 676
 
 ## Challenge
 

@@ -1,9 +1,7 @@
-# RSA1
+# RSA1 - 559
 
 ## Challenge
-
-> RSA1 (1000)
-> 
+ 
 > You will need access into Home Invasion network to complete this challenge. There is only one flag in this challenge.
 > 
 > Sometimes IOT devices dont generate the best numbers.
