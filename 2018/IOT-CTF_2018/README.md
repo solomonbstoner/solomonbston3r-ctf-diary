@@ -25,6 +25,8 @@ This is the list of completed writeups for your viewing pleasure, please. :)
 | ArguablySmartLights | Recon Basics Web | 9 |
 | ArguablySmartLights | Stealing Unattended Certificates | 6 |
 | Armv71 | shellcode | 3 |
+| Armv71 | simplerop | 1 |
+| Armv71 | static | 0 |
 | Armv71 | warmup | 4 |
 | Crypto | RSA1 | 8 |
 | Crypto | RSA2 | 7 |
