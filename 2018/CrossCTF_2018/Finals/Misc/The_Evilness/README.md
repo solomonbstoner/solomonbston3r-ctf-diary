@@ -13,7 +13,7 @@
 If we nc to `ctf.pwn.sg 4020`, we are shown the Python script [theevilness.py](theevilness.py) and prompted with:
 
 ```
-Here comes the shredder! (/usr/bin/shred /tmp/cartoon-qOa6us.dat)
+Here comes the shredder! (/usr/bin/shred /tmp/cartoon-N4KVtr.dat)
 ```
 
 From the provided Python script [theevilness.py](theevilness.py), we can observe that it:
@@ -46,7 +46,7 @@ where `ed` is the command for [Ed](http://www.gnu.org/software/ed/manual/ed_manu
 Interacting with `ctf.pwn.sg` on port 4020, we supply the inputs `11` (corresponds to 12th character) and `26` (hex representation of `&`):
 
 ```
-Here comes the shredder! (/usr/bin/shred /tmp/cartoon-Qh40QX.dat)
+Here comes the shredder! (/usr/bin/shred /tmp/cartoon-N4KVtr.dat)
 11
 26
 sh: 1: /usr/bin/sh: not found
